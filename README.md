@@ -1,2 +1,0 @@
-# InterceptRocketGame
-test github copilot

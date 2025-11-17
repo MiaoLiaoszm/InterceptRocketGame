@@ -1,351 +1,232 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
-  <title>彩色小球随机运动与碰撞</title>
-  <style>
-    html,body { height:100%; margin:0; background:#111; }
-    canvas { display:block; margin:0 auto; background:#0b0b0b; }
-    .info { position:fixed; left:8px; top:8px; color:#ddd; font-family:Arial, Helvetica, sans-serif; font-size:13px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>火箭发射模拟游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: white;
+        }
+        
+        #gameContainer {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.4), inset 0 0 20px rgba(0, 255, 255, 0.1);
+            max-width: 850px;
+        }
+        
+        h1 {
+            margin-bottom: 8px;
+            font-size: 28px;
+            background: linear-gradient(45deg, #00ffff, #ff00ff, #ffff00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.7));
+        }
+        
+        #gameCanvas {
+            border: 3px solid transparent;
+            border-radius: 15px;
+            background: linear-gradient(to bottom, #0a1628 0%, #1a3a52 100%);
+            display: block;
+            margin: 0 auto;
+            box-shadow: 
+                0 0 20px rgba(0, 255, 255, 0.3),
+                inset 0 0 30px rgba(0, 100, 150, 0.2);
+        }
+        
+        #controls {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 8px;
+            background: rgba(0, 50, 100, 0.2);
+            border-radius: 10px;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        label {
+            font-weight: bold;
+            font-size: 13px;
+            color: #00ffff;
+            text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+        }
+        
+        input[type="range"] {
+            width: 120px;
+            height: 6px;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            background: linear-gradient(90deg, #4a5568, #00ffff);
+            border-radius: 5px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #00ffff, #0088ff);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+            transition: all 0.2s;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 1);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #00ffff, #0088ff);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+        }
+        
+        #angleValue, #powerValue {
+            display: inline-block;
+            min-width: 40px;
+            font-size: 13px;
+            color: #ffff00;
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(255, 255, 0, 0.8);
+        }
+        
+        button {
+            padding: 10px 25px;
+            font-size: 14px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 50%, #ffd93d 100%);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 
+                0 4px 15px rgba(255, 107, 107, 0.5),
+                inset 0 0 10px rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s;
+        }
+        
+        button:hover::before {
+            left: 100%;
+        }
+        
+        button:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 
+                0 8px 25px rgba(255, 107, 107, 0.7),
+                inset 0 0 15px rgba(255, 255, 255, 0.3),
+                0 0 20px rgba(255, 140, 0, 0.5);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+        
+        button:active {
+            transform: translateY(-1px) scale(1.02);
+        }
+        
+        button:disabled {
+            background: linear-gradient(135deg, #555, #777);
+            cursor: not-allowed;
+            box-shadow: none;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        button:disabled::before {
+            display: none;
+        }
+        
+        #score {
+            margin-top: 8px;
+            font-size: 16px;
+            color: #ffff00;
+            text-shadow: 0 0 10px rgba(255, 255, 0, 0.8);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 5px 15px;
+            border-radius: 15px;
+            display: inline-block;
+        }
+        
+        #message {
+            margin-top: 6px;
+            font-size: 14px;
+            min-height: 20px;
+            color: #00ff00;
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
+        }
+    </style>
 </head>
 <body>
-  <div class="info">点击画布可添加小球 · 拖动可移动小球</div>
-  <canvas id="c"></canvas>
-  <script>
-    const canvas = document.getElementById('c');
-    const ctx = canvas.getContext('2d');
+    <div id="gameContainer">
+        <h1>🚀 火箭发射模拟游戏</h1>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <div id="controls">
+            <div class="control-group">
+                <label for="angleSlider">发射角度:</label>
+                <input type="range" id="angleSlider" min="0" max="90" value="45" step="1">
+                <span id="angleValue">45°</span>
+            </div>
+            
+            <div class="control-group">
+                <label for="powerSlider">发射力量:</label>
+                <input type="range" id="powerSlider" min="20" max="100" value="60" step="5">
+                <span id="powerValue">60%</span>
+            </div>
+            
+            <button id="launchBtn">发射火箭 🚀</button>
+            <button id="resetBtn">重置游戏</button>
+        </div>
+        
+        <div id="score">得分: 0 | 发射次数: 0</div>
+        <div id="message">调整角度和力量，击中目标得分！</div>
+    </div>
 
-    function resize() {
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = Math.floor(window.innerWidth * dpr);
-      canvas.height = Math.floor(window.innerHeight * dpr);
-      canvas.style.width = window.innerWidth + 'px';
-      canvas.style.height = window.innerHeight + 'px';
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-    }
-    window.addEventListener('resize', resize);
-    resize();
-
-    // 工具
-    function rand(min, max) { return Math.random()*(max-min)+min; }
-    function randColor() {
-      const h = Math.floor(Math.random()*360);
-      const s = Math.floor(rand(60,90));
-      const l = Math.floor(rand(45,60));
-      return `hsl(${h} ${s}% ${l}%)`;
-    }
-
-    // 所有小球的初始半径相同
-    const INITIAL_RADIUS = 16;
-    // 初始速度范围（较快）
-    const INITIAL_SPEED_MIN = 150;
-    const INITIAL_SPEED_MAX = 420;
-    // 尾焰长度
-    const TRAIL_LENGTH = 14;
-    // 尾焰最大长度上限，防止无限增长
-    const MAX_TRAIL = 80;
-
-    // 统计：同色碰撞次数及颜色显示
-    const collisionCounts = {};
-    const colorDisplay = {};
-
-    // 两种初始颜色（用于最开始的 4 个小球）
-    // 对比鲜明的颜色：红色与青蓝（便于观察同色碰撞）
-    const INITIAL_COLORS = ['hsl(0 80% 50%)', 'hsl(190 90% 50%)'];
-
-    // 创建右上角统计面板
-    const statsDiv = document.createElement('div');
-    statsDiv.id = 'stats';
-    statsDiv.className = 'info';
-    statsDiv.style.right = '8px';
-    statsDiv.style.left = 'auto';
-    statsDiv.style.top = '8px';
-    statsDiv.style.textAlign = 'right';
-    document.body.appendChild(statsDiv);
-
-    class Ball {
-      constructor(x,y,r,color) {
-        this.x = x;
-        this.y = y;
-        this.r = r;
-        this.color = color;
-        // 标记是否删除，默认 false
-        this._remove = false;
-        // 标准化颜色键用于可靠比较（去掉空格并小写）
-        this.colorKey = String(color).replace(/\s+/g, '').toLowerCase();
-        this.mass = r * r; // 质量与面积成正比
-        // 使用更高的初始速度
-        const speed = rand(INITIAL_SPEED_MIN, INITIAL_SPEED_MAX); // px/s
-        const ang = rand(0, Math.PI*2);
-        this.vx = Math.cos(ang)*speed;
-        this.vy = Math.sin(ang)*speed;
-        // 尾焰轨迹（最近的在前）
-        this.trail = [];
-        this.trailMax = TRAIL_LENGTH;
-      }
-      draw(ctx) {
-        // 绘制尾焰（从最近到最远）
-        if (this.trail.length) {
-          ctx.save();
-          for (let i = 0; i < this.trail.length; i++) {
-            const p = this.trail[i];
-            const t = i / this.trail.length; // 0 最近 -> 1 最远
-            const alpha = (1 - t) * 0.6;
-            const rr = this.r * (0.6 * (1 - t));
-            ctx.globalAlpha = alpha;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, rr, 0, Math.PI*2);
-            ctx.fillStyle = this.color;
-            ctx.fill();
-          }
-          ctx.restore();
-        }
-        ctx.beginPath();
-        // 取消径向渐变，直接使用纯色填充
-        ctx.fillStyle = this.color;
-        ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
-        ctx.fill();
-      }
-      update(dt) {
-        // 在移动前记录当前位置到尾焰
-        this.trail.unshift({ x: this.x, y: this.y });
-        if (this.trail.length > this.trailMax) this.trail.pop();
-        this.x += this.vx * dt;
-        this.y += this.vy * dt;
-      }
-    }
-
-    const balls = [];
-    const initialCount = 4;
-    for (let i=0;i<initialCount;i++){
-      addRandomBall(undefined, undefined, INITIAL_COLORS[i % INITIAL_COLORS.length]);
-    }
-
-    function addRandomBall(x,y,colorArg) {
-      const r = INITIAL_RADIUS;
-      const px = (x !== undefined) ? x : rand(r, window.innerWidth - r);
-      const py = (y !== undefined) ? y : rand(r, window.innerHeight - r);
-      const color = colorArg || randColor();
-      const b = new Ball(px, py, r, color);
-      // b._remove 已在构造器中初始化
-       // 保证不与已有小球重叠（简单尝试）
-       for (let k=0; k<200; k++){
-         let ok = true;
-         for (const other of balls) {
-           const dx = b.x - other.x, dy = b.y - other.y;
-           const dist = Math.hypot(dx,dy);
-           if (dist < b.r + other.r) { ok = false; break; }
-         }
-         if (ok) break;
-         b.x = rand(b.r, window.innerWidth - b.r);
-         b.y = rand(b.r, window.innerHeight - b.r);
-       }
-      // 初始化该颜色的计数与显示（如果还不存在）
-      collisionCounts[b.colorKey] = collisionCounts[b.colorKey] || 0;
-      colorDisplay[b.colorKey] = b.color;
-       balls.push(b);
-       return b;
-     }
-
-    // 碰撞解析（弹性碰撞）
-    function resolveCollision(a, b) {
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist === 0) return; // 避免除0
-
-      // 如果颜色相同，随机选取一个体积（半径）增大 10%（体积意义上），另一个标记删除
-      if (a.colorKey === b.colorKey) {
-        const winner = Math.random() < 0.5 ? a : b;
-        const loser = winner === a ? b : a;
-        // 合并速度以近似守恒动量（使用当前质量）
-        const totalMass = a.mass + b.mass;
-        const newVx = (a.vx * a.mass + b.vx * b.mass) / totalMass;
-        const newVy = (a.vy * a.mass + b.vy * b.mass) / totalMass;
-        // 体积增大为原来的 2 倍，半径按立方根放大
-        winner.r *= Math.cbrt(2);
-        // 更新质量（仍按面积 ~ r^2）
-        winner.mass = winner.r * winner.r;
-        winner.vx = newVx;
-        winner.vy = newVy;
-        // 标记删除另一个小球，实际从数组中清理由 handleCollisions 完成
-        loser._remove = true;
-        // 尾焰长度翻倍，但不超过 MAX_TRAIL；并截断过长的轨迹数组
-        winner.trailMax = Math.min(MAX_TRAIL, Math.floor((winner.trailMax || TRAIL_LENGTH) * 2));
-        if (winner.trail && winner.trail.length > winner.trailMax) {
-          winner.trail.length = winner.trailMax;
-        }
-         // 计数加一
-         collisionCounts[winner.colorKey] = (collisionCounts[winner.colorKey] || 0) + 1;
-         // 更新统计面板（下一帧 loop 也会刷新）
-         updateStats();
-         return;
-      }
-
-      // 单位法向量
-      const nx = dx / dist;
-      const ny = dy / dist;
-
-      // 相对速度
-      const rvx = b.vx - a.vx;
-      const rvy = b.vy - a.vy;
-      const relVelAlongNormal = rvx * nx + rvy * ny;
-
-      if (relVelAlongNormal >= 0) return; // 正在分离，不处理
-
-      const e = 1.0; // 恢复系数（1 = 完全弹性）
-      const j = -(1 + e) * relVelAlongNormal / (1 / a.mass + 1 / b.mass);
-
-      const impulseX = j * nx;
-      const impulseY = j * ny;
-
-      a.vx -= impulseX / a.mass;
-      a.vy -= impulseY / a.mass;
-      b.vx += impulseX / b.mass;
-      b.vy += impulseY / b.mass;
-
-      // 位置修正，防止重叠（简单比例修正）
-      const percent = 0.8; // 推开的比例
-      const slop = 0.01;
-      const overlap = Math.max(dist - a.r - b.r, -slop);
-      if (overlap < 0) {
-        const correction = ( -overlap / (1/a.mass + 1/b.mass) ) * percent;
-        const corrX = correction * nx;
-        const corrY = correction * ny;
-        a.x -= corrX / a.mass;
-        a.y -= corrY / a.mass;
-        b.x += corrX / b.mass;
-        b.y += corrY / b.mass;
-      }
-    }
-
-    function updateStats() {
-      let html = '';
-      for (const key in collisionCounts) {
-        html += `${colorDisplay[key] || key}: ${collisionCounts[key]}<br>`;
-      }
-      statsDiv.innerHTML = html;
-    }
-
-    // 碰撞检测与处理（O(n^2)）
-    function handleCollisions() {
-      const n = balls.length;
-      for (let i=0;i<n;i++){
-        const A = balls[i];
-        if (A._remove) continue;
-        for (let j=i+1;j<n;j++){
-          const B = balls[j];
-          if (B._remove) continue;
-          const dx = B.x - A.x;
-          const dy = B.y - A.y;
-          const distSq = dx*dx + dy*dy;
-          const minDist = A.r + B.r;
-          if (distSq <= minDist*minDist) {
-            resolveCollision(A, B);
-          }
-        }
-      }
-
-      // 清理已标记删除的小球（从后往前以安全删除）
-      for (let k=balls.length-1;k>=0;k--) {
-        if (balls[k]._remove) balls.splice(k,1);
-      }
-    }
-
-    // 边界反弹
-    function handleWalls(b) {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      if (b.x - b.r < 0) {
-        b.x = b.r;
-        b.vx = Math.abs(b.vx);
-      } else if (b.x + b.r > w) {
-        b.x = w - b.r;
-        b.vx = -Math.abs(b.vx);
-      }
-      if (b.y - b.r < 0) {
-        b.y = b.r;
-        b.vy = Math.abs(b.vy);
-      } else if (b.y + b.r > h) {
-        b.y = h - b.r;
-        b.vy = -Math.abs(b.vy);
-      }
-    }
-
-    let last = performance.now();
-    function loop(now) {
-      const dt = Math.min((now - last)/1000, 0.033); // 防止跳帧过大
-      last = now;
-
-      // 更新位置
-      for (const b of balls) {
-        b.update(dt);
-        handleWalls(b);
-      }
-      handleCollisions();
-
-      // 绘制
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      for (const b of balls) b.draw(ctx);
-
-      // 更新统计面板
-      updateStats();
-
-      requestAnimationFrame(loop);
-    }
-    requestAnimationFrame(loop);
-
-    // 交互：点击增加小球，拖动移动小球
-    let dragBall = null;
-    let dragOffsetX = 0, dragOffsetY = 0;
-    canvas.addEventListener('pointerdown', (ev) => {
-      const rect = canvas.getBoundingClientRect();
-      const x = ev.clientX - rect.left;
-      const y = ev.clientY - rect.top;
-      // 先尝试拾取已有小球（最近的）
-      let found = null;
-      for (let i=balls.length-1;i>=0;i--){
-        const b = balls[i];
-        const dx = x - b.x, dy = y - b.y;
-        if (dx*dx + dy*dy <= b.r*b.r) { found = b; break; }
-      }
-      if (found) {
-        dragBall = found;
-        dragOffsetX = x - found.x;
-        dragOffsetY = y - found.y;
-        canvas.setPointerCapture(ev.pointerId);
-      } else {
-        addRandomBall(x,y);
-      }
-    });
-    canvas.addEventListener('pointermove', (ev) => {
-      if (!dragBall) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = ev.clientX - rect.left;
-      const y = ev.clientY - rect.top;
-      // 直接设置位置并将速度置0（拖动）
-      dragBall.x = x - dragOffsetX;
-      dragBall.y = y - dragOffsetY;
-      dragBall.vx = 0;
-      dragBall.vy = 0;
-    });
-    canvas.addEventListener('pointerup', (ev) => {
-      if (!dragBall) return;
-      // 抬起时给一个小的随机推力
-      dragBall.vx = rand(-120,120);
-      dragBall.vy = rand(-120,120);
-      dragBall = null;
-    });
-    canvas.addEventListener('pointercancel', () => { dragBall = null; });
-
-    // 键盘：按 C 清空，按 A 添加 10 个
-    window.addEventListener('keydown', (e) => {
-      if (e.key.toLowerCase() === 'c') balls.length = 0;
-      if (e.key.toLowerCase() === 'a') {
-        for (let i=0;i<10;i++) addRandomBall();
-      }
-    });
-  </script>
+    <script src="game.js"></script>
 </body>
 </html>
